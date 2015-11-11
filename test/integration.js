@@ -3,11 +3,34 @@ var mongooseOverride = require('../dist/mongoose-override'),
     assert = require('assert');
 
 describe('mongoose-override', () => {
-  it('can be applied', () => {
-    var modelScheme = new mongoose.Schema({
-      'referenceObject' : {'type' : 'String', ref : 'otherModel'}
+
+  beforeEach((done) => {
+    mongoose.connect('mongodb://localhost/test', (err) => {
+      done(err);
     });
+  });
+  
+  afterEach((done) => {
+    mongoose.disconnect(() => {
+      done();
+    });
+  });
+ 
+  it('can be applied', (done) => {
+
+    var modelScheme = new mongoose.Schema({
+      'referenceObject' : {'type' : 'String', 'ref' : 'otherModel'}
+    });
+
     modelScheme.plugin(mongooseOverride, {'overrides' : ['referenceObject']});
+    var model = mongoose.model('model', modelScheme);
+    var instance = new model({'referenceObject' : 'ABC12345ABC' });
+    instance.save((err) => {
+      if(err) {
+         assert(!err);
+      }
+      done();
+    });
   });
 
   it('should save element with overriding', (done) => {
@@ -28,7 +51,7 @@ describe('mongoose-override', () => {
         return done(err);
       }
       var bInstance = new B({
-        'a' : {'_id' : aInstance._id, 'property' : 'Overriden'}
+        'a' : {'ref' : aInstance._id, 'property' : 'Overriden'}
       });
       bInstance.save((err, bInstance) => {
         if(err) {
@@ -42,6 +65,6 @@ describe('mongoose-override', () => {
           done();
         });
       });
-    })
-  })
+    });
+  });
 });
